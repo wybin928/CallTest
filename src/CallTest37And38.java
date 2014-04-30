@@ -14,7 +14,7 @@ import java.net.URLEncoder;
 
 public class CallTest37And38 {
 
-	public static final String URLString = "http://192.168.1.67:9090/vincio/ProcessFlowServlet";	// URL for Vincio servlet
+	public static final String URLString = "http://192.168.1.67:9090/vincio/ProcessFlowServlet"; // URL for Vincio servlet
 	public static final String Processflow = "CCB";	// processflow alias configured in processflowConfig.xml
 	public static final String Username = "admin"; 	// Vincio ID
 	public static final String Password = "admin"; 	// Vincio password
