@@ -14,12 +14,12 @@ import java.net.URLEncoder;
 
 public class CallTest37And38 {
 
-	public static final String URLString = "http://192.168.235.128:8080/vincio/ProcessFlowServlet";	// URL for Vincio servlet
-	public static final String Processflow = "HW"; 	// processflow alias configured in processflowConfig.xml
+	public static final String URLString = "http://192.168.1.67:9090/vincio/ProcessFlowServlet";	// URL for Vincio servlet
+	public static final String Processflow = "CCB";	// processflow alias configured in processflowConfig.xml
 	public static final String Username = "admin"; 	// Vincio ID
 	public static final String Password = "admin"; 	// Vincio password
-	public static final String Input_parameter = "INPUT";	// processflow input parameter name
-	public static final String FileName = "D:/Work/Products/Vincio/3.8Performance/3.3vs3.8.3Batch/client/request.xml";	// File path which stores input string
+	public static final String Input_parameter = "MESSAGE";	// processflow input parameter name
+	public static final String FileName = "D:/Vincio/pfs/request.xml";	// File path which stores input string
 	public static final int ExeCount = 1; 			// Execution Count
 	public static final int Threads = 1;			// Used for concurrent testing
 
