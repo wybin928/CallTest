@@ -16,17 +16,22 @@ import java.util.concurrent.CountDownLatch;
 public class CallTest implements Runnable {
 
 	// URL for Vincio servlet
-	public static String URLString = "http://192.168.235.128:8080/vincio/ProcessFlowServlet";
+	public static final String URLString = "http://192.168.235.128:8080/vincio/ProcessFlowServlet";
+	//public static final String URLString = "http://192.168.1.67:8080/vincio383/ProcessFlowServlet";
+	//public static final String URLString = "http://192.168.1.67:8080/vincio339/WorkflowXMLServlet";
+	
 	// processflow alias configured in processflowConfig.xml
-	public static String Processflow = "CCB";
+	public static final String Processflow = "CCB";
 	// Vincio ID
-	public static String Username = "admin";;
+	public static final String Username = "admin";
 	// Vincio password
-	public static String Password = "admin";
+	public static final String Password = "admin";
 	// processflow input parameter name
-	public static String Input_parameter = "MESSAGE";
+	public static final String Input_parameter = "MESSAGE";
 	// File path which stores input string
-	public static String FileName = "D:/Work/Products/Vincio/3.8Performance/3.3vs3.8.3Batch/client/request.xml";
+	public static final String FileName = "D:/Work/Products/Vincio/3.8Performance/3.3vs3.8.3Batch/client/request.xml";
+	//public static final String FileName = “D:/Vincio/pfs/request.xml
+	
 	// Execution Count for each thread
 	public static int ExeCount = 10;
 	// Used for concurrent testing
@@ -36,13 +41,15 @@ public class CallTest implements Runnable {
 
 	int threadNumber;
 	private CountDownLatch countDownLatch;
+	// Used to calculate average response time
+	public static long singleTimeSum;
 
 	public CallTest(int count, CountDownLatch countDownLatch) {
 		this.threadNumber = count;
 		this.countDownLatch = countDownLatch;
 	}
 
-	public static long doGetTest(long ms, String input) throws IOException {
+	public static void doGetTest(String input) throws IOException {
 		input = URLEncoder.encode(input, "UTF-8"); // conver to URL coded
 													// format, the %20.. stuff
 
@@ -60,14 +67,10 @@ public class CallTest implements Runnable {
 			httpCon.setDoInput(true);
 			httpCon.setUseCaches(true);
 
-			long start = System.currentTimeMillis();
-
 			vincioRspStr = httpCon.getInputStream(); // Send request to Vincio
 														// servlet and read
 														// response
 
-			long tempms = System.currentTimeMillis() - start;
-			ms = ms + tempms;
 			InputStream buffer = new BufferedInputStream(vincioRspStr);
 			Reader r = new InputStreamReader(buffer, "UTF-8");
 
@@ -91,10 +94,9 @@ public class CallTest implements Runnable {
 			httpCon.disconnect();
 		}
 
-		return ms;
 	}
 
-	public static long doPostTest(long ms, String input) throws IOException {
+	public static void doPostTest(String input) throws IOException {
 
 		URL url = new URL(URLString);
 		String parameter = "_processflow_=" + Processflow + "&_username_="
@@ -117,14 +119,10 @@ public class CallTest implements Runnable {
 			vincioReqStr.flush();
 			vincioReqStr.close(); // Need to close first to complete filling the
 									// request
-			long start = System.currentTimeMillis();
 
 			vincioRspStr = httpCon.getInputStream(); // Send request to Vincio
 														// servlet and read
 														// response
-
-			long tempms = System.currentTimeMillis() - start;
-			ms = ms + tempms;
 
 			InputStream buffer = new BufferedInputStream(vincioRspStr);
 			Reader r = new InputStreamReader(buffer, "UTF-8");
@@ -149,7 +147,56 @@ public class CallTest implements Runnable {
 			httpCon.disconnect();
 		}
 
-		return ms;
+	}
+
+	public static void doPostTest33(String input) throws IOException {
+
+		URL url = new URL(URLString);
+		String parameter = input;
+		HttpURLConnection httpCon = null;
+		OutputStreamWriter vincioReqStr = null;
+		InputStream vincioRspStr = null;
+
+		try {
+			httpCon = (HttpURLConnection) url.openConnection();
+			httpCon.setDoOutput(true); // to do Post
+			httpCon.setDoInput(true);
+			httpCon.setRequestMethod("POST");
+			httpCon.setUseCaches(false);
+
+			vincioReqStr = new OutputStreamWriter(httpCon.getOutputStream(),
+					"UTF-8");
+			vincioReqStr.write(parameter);
+			vincioReqStr.flush();
+			vincioReqStr.close(); // Need to close first to complete filling the
+									// request
+
+			vincioRspStr = httpCon.getInputStream(); // Send request to Vincio
+														// servlet and read
+														// response
+
+			InputStream buffer = new BufferedInputStream(vincioRspStr);
+			Reader r = new InputStreamReader(buffer, "UTF-8");
+
+			int c;
+			StringBuffer out = new StringBuffer("");
+			while ((c = r.read()) != -1) {
+				out.append((char) c);
+			}
+			// 打印回应
+			// System.out.println(out);
+		} catch (MalformedURLException e1) {
+			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		finally {
+			if (vincioRspStr != null) {
+				vincioRspStr.close();
+			}
+			httpCon.disconnect();
+		}
 
 	}
 
@@ -182,46 +229,50 @@ public class CallTest implements Runnable {
 		for (int i = 1; i < ExeCount + 1; i++) {
 			long ms = 0L;
 			try {
-				ms = doPostTest(ms, input);
+				long start = System.currentTimeMillis();
+				doPostTest(input);
+				ms = System.currentTimeMillis() - start;
+				singleTimeSum += ms;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			System.out.println("*****线程 [" + threadNumber + "]， 第 [" + i
 					+ "] 次执行，耗时：" + ms + "ms");
 		}
-		
+
 		// 线程倒数计数器减一
 		countDownLatch.countDown();
 	}
 
 	public static void main(String[] args) throws Exception {
 
-		input = readFile(FileName);
-		
+		input = readFile(FileName); // read input message from a file
+
 		long totalStart = System.currentTimeMillis();
-		
-		// 创建一个初始值为线程数的倒数计数器  
-        CountDownLatch countDownLatch = new CountDownLatch(Threads);
-		
+
+		// 创建一个初始值为线程数的倒数计数器
+		CountDownLatch countDownLatch = new CountDownLatch(Threads);
+
+		// 启动线程进行测试
 		for (int threads = 0; threads < Threads; threads++) {
-			Thread t = new Thread(new CallTest(threads + 1, countDownLatch ));
+			Thread t = new Thread(new CallTest(threads + 1, countDownLatch));
 			t.start();
 		}
-		
-		try  
-        {  
-            // 阻塞当前主线程，直到倒数计数器倒数到0  
-            countDownLatch.await();  
-        }  
-        catch (InterruptedException e)  
-        {  
-            e.printStackTrace();  
-        }  
-		
-		float totalDuration = (System.currentTimeMillis() - totalStart)/(float)1000;
-		float tps = ExeCount*Threads/totalDuration;
-		tps = (float) (Math.round(tps*100.0)/100.0);	//四舍五入保留后两位
-		System.out.println("处理 [" + ExeCount*Threads + "] 条记录，用时" + totalDuration + "秒，折算 TPS ：" + tps );
+
+		try {
+			// 阻塞当前主线程，直到倒数计数器倒数到0
+			countDownLatch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		float totalDuration = (System.currentTimeMillis() - totalStart)
+				/ (float) 1000;
+		float tps = ExeCount * Threads / totalDuration;
+		tps = (float) (Math.round(tps * 100.0) / 100.0); // 四舍五入保留后两位
+		System.out.println("处理 [" + ExeCount * Threads + "] 条记录，用时"
+				+ totalDuration + "秒，折算 TPS ：" + tps + "，"
+				+ "平均每笔响应时间：" + singleTimeSum*1000/(ExeCount*Threads));
 	}
 
 }
