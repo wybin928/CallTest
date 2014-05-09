@@ -33,7 +33,7 @@ public class CallTest implements Runnable {
 	//public static final String FileName = “D:/Vincio/pfs/request.xml
 	
 	// Execution Count for each thread
-	public static int ExeCount = 10;
+	public static int ExeCount = 2;
 	// Used for concurrent testing
 	public static int Threads = 5;
 	// String read from file will input to Vincio
@@ -272,7 +272,7 @@ public class CallTest implements Runnable {
 		tps = (float) (Math.round(tps * 100.0) / 100.0); // 四舍五入保留后两位
 		System.out.println("处理 [" + ExeCount * Threads + "] 条记录，用时"
 				+ totalDuration + "秒，折算 TPS ：" + tps + "，"
-				+ "平均每笔响应时间：" + singleTimeSum*1000/(ExeCount*Threads));
+				+ "平均每笔响应时间：" + singleTimeSum/(ExeCount*Threads) + "ms");
 	}
 
 }
